@@ -4,7 +4,8 @@
       "Bash(npm create:*)",
       "Bash(npm install)",
       "Bash(npm install:*)",
-      "Bash(npm cache clean:*)"
+      "Bash(npm cache clean:*)",
+      "Bash(npm run lint)"
     ],
     "deny": [],
     "ask": []

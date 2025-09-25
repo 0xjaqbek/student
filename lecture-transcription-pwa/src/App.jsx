@@ -17,7 +17,7 @@ function App() {
 
   // Handle sync status
   useEffect(() => {
-    const handleSyncEvent = (event, data) => {
+    const handleSyncEvent = (event) => {
       switch (event) {
         case 'sync_start':
           setIsSyncing(true);
