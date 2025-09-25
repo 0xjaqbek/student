@@ -1,17 +1,19 @@
-/* App Layout */
+/* App Layout - Dark Theme */
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #1a1a1a;
+  color: #ffffff;
   /* Disable pull-to-refresh */
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
 
 .app-header {
-  background: #f8f9fa;
+  background: #2d2d2d;
   padding: 1rem 2rem;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid #404040;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -19,30 +21,30 @@
 
 .app-header h1 {
   margin: 0;
-  color: #212529;
+  color: #ffffff;
   font-size: 1.5rem;
 }
 
 .app-nav {
-  background: #ffffff;
+  background: #2d2d2d;
   padding: 1rem 2rem;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid #404040;
   display: flex;
   gap: 1rem;
 }
 
 .app-nav button {
   padding: 0.5rem 1rem;
-  border: 1px solid #dee2e6;
-  background: #ffffff;
-  color: #495057;
+  border: 1px solid #404040;
+  background: #3d3d3d;
+  color: #ffffff;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .app-nav button:hover:not(:disabled) {
-  background: #e9ecef;
+  background: #4d4d4d;
 }
 
 .app-nav button.active {
@@ -62,6 +64,7 @@
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  background: #1a1a1a;
 }
 
 /* Authentication */
@@ -72,6 +75,8 @@
   justify-content: center;
   min-height: 100vh;
   text-align: center;
+  background: #1a1a1a;
+  color: #ffffff;
 }
 
 .google-signin-btn {
@@ -146,10 +151,11 @@
 }
 
 .create-lecture-form {
-  background: #f8f9fa;
+  background: #2d2d2d;
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 2rem;
+  border: 1px solid #404040;
 }
 
 .form-group {
@@ -160,14 +166,21 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  color: #ffffff;
 }
 
 .form-group input {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #ced4da;
+  border: 1px solid #404040;
   border-radius: 4px;
   font-size: 14px;
+  background: #3d3d3d;
+  color: #ffffff;
+}
+
+.form-group input::placeholder {
+  color: #aaaaaa;
 }
 
 .submit-btn {
@@ -195,7 +208,7 @@
 }
 
 .lecture-item {
-  border: 1px solid #dee2e6;
+  border: 1px solid #404040;
   border-radius: 8px;
   padding: 1rem;
   cursor: pointer;
@@ -204,16 +217,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: #2d2d2d;
+  color: #ffffff;
 }
 
 .lecture-item:hover {
   border-color: #007bff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
 }
 
 .lecture-item.selected {
   border-color: #007bff;
-  background: #f8f9ff;
+  background: #1a2b3d;
 }
 
 .lecture-info {
@@ -255,7 +270,7 @@
 
 .no-lectures {
   text-align: center;
-  color: #6c757d;
+  color: #aaaaaa;
   padding: 2rem;
 }
 
@@ -328,12 +343,13 @@
 }
 
 .transcript-container {
-  background: #ffffff;
-  border: 1px solid #dee2e6;
+  background: #2d2d2d;
+  border: 1px solid #404040;
   border-radius: 8px;
   padding: 1.5rem;
   min-height: 300px;
   margin-bottom: 1rem;
+  color: #ffffff;
 }
 
 .transcript {
@@ -375,16 +391,16 @@
 
 .view-controls button {
   padding: 0.5rem 1rem;
-  border: 1px solid #dee2e6;
-  background: #ffffff;
-  color: #495057;
+  border: 1px solid #404040;
+  background: #3d3d3d;
+  color: #ffffff;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .view-controls button:hover {
-  background: #e9ecef;
+  background: #4d4d4d;
 }
 
 .view-controls button.active {
@@ -425,11 +441,12 @@
 }
 
 .transcription-content {
-  background: #ffffff;
-  border: 1px solid #dee2e6;
+  background: #2d2d2d;
+  border: 1px solid #404040;
   border-radius: 8px;
   padding: 1.5rem;
   min-height: 400px;
+  color: #ffffff;
 }
 
 .content {
@@ -450,7 +467,7 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 0.5rem;
-  background: #f8f9fa;
+  background: #3d3d3d;
   border-radius: 4px;
   border-left: 3px solid #007bff;
 }
@@ -459,11 +476,12 @@
   flex: 1;
   margin-right: 1rem;
   line-height: 1.4;
+  color: #ffffff;
 }
 
 .chunk-time {
   font-size: 11px;
-  color: #6c757d;
+  color: #aaaaaa;
   white-space: nowrap;
   font-family: monospace;
 }
@@ -471,14 +489,15 @@
 .raw-text {
   line-height: 1.6;
   padding: 1rem;
-  background: #f8f9fa;
+  background: #3d3d3d;
   border-radius: 4px;
+  color: #ffffff;
 }
 
 .meta {
   font-size: 12px;
-  color: #6c757d;
-  border-top: 1px solid #e9ecef;
+  color: #aaaaaa;
+  border-top: 1px solid #404040;
   padding-top: 1rem;
 }
 
@@ -486,9 +505,18 @@
   width: 100%;
   min-height: 300px;
   padding: 1rem;
-  border: 1px solid #ced4da;
+  border: 1px solid #404040;
   border-radius: 4px;
   font-family: inherit;
+  background: #3d3d3d;
+  color: #ffffff;
+}
+
+.edit-textarea::placeholder {
+  color: #aaaaaa;
+}
+
+.edit-textarea {
   font-size: 14px;
   line-height: 1.5;
   resize: vertical;
@@ -551,12 +579,12 @@
   align-items: center;
   min-height: 200px;
   font-size: 18px;
-  color: #6c757d;
+  color: #aaaaaa;
 }
 
 .no-lecture-selected {
   text-align: center;
-  color: #6c757d;
+  color: #aaaaaa;
   padding: 2rem;
 }
 
