@@ -843,6 +843,11 @@ body {
   border-radius: 8px;
 }
 
+/* Single button styling */
+.lecture-actions .action-button:only-child {
+  min-width: 200px;
+}
+
 .action-button {
   padding: 0.75rem 1.5rem;
   border: none;

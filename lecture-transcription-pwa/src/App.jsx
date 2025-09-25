@@ -70,7 +70,7 @@ function App() {
         >
           <span className="menu-icon">📚</span>
           <span className="menu-title">Przeglądaj Wykłady</span>
-          <span className="menu-description">Zobacz istniejące wykłady i transkrypcje</span>
+          <span className="menu-description">Przeglądaj i czytaj zapisane transkrypcje wykładów</span>
         </button>
       </div>
     </div>
@@ -139,12 +139,6 @@ function App() {
 
             {selectedLectureId && (
               <div className="lecture-actions">
-                <button
-                  className="action-button record"
-                  onClick={() => setCurrentView('record')}
-                >
-                  🎤 Nagraj Transkrypcję
-                </button>
                 <button
                   className="action-button view"
                   onClick={() => setCurrentView('view')}
