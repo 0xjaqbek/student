@@ -19,7 +19,6 @@ function SpeechRecognition({ lectureId, userId }) {
   const sessionStartTime = useRef(null);
   const lastStoredTranscriptRef = useRef('');
   const chunkTimeoutRef = useRef(null);
-  const lastResultTimestamp = useRef(0);
   const isCreatingChunk = useRef(false);
   const { isOnline } = useNetworkStatus();
 
@@ -44,99 +43,70 @@ function SpeechRecognition({ lectureId, userId }) {
 
     recognition.onresult = async (event) => {
       let interim = '';
-      let fullFinalTranscript = '';
+      let finalTranscriptPart = '';
 
-      // Collect all final results to get the complete transcript
-      for (let i = 0; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          fullFinalTranscript += transcript + ' ';
-        } else {
-          interim += transcript;
+      // Get only the LAST result that is final (most recent completed phrase)
+      for (let i = event.results.length - 1; i >= 0; i--) {
+        if (event.results[i].isFinal && !event.results[i][0].transcript.trim().includes(transcriptRef.current)) {
+          finalTranscriptPart = event.results[i][0].transcript;
+          break;
         }
       }
 
-      // Update display with current transcript
-      if (fullFinalTranscript) {
-        transcriptRef.current = fullFinalTranscript.trim();
+      // Get interim results from non-final results
+      for (let i = 0; i < event.results.length; i++) {
+        if (!event.results[i].isFinal) {
+          interim += event.results[i][0].transcript;
+        }
+      }
+
+      // If we have a new final part, add it to our transcript
+      if (finalTranscriptPart && finalTranscriptPart.trim()) {
+        transcriptRef.current = (transcriptRef.current + ' ' + finalTranscriptPart).trim();
         setTranscript(transcriptRef.current);
-      }
-      setInterimTranscript(interim);
 
-      // Update timestamp for debouncing
-      lastResultTimestamp.current = Date.now();
+        // Store this new part immediately as a chunk
+        if (lectureId && !isCreatingChunk.current) {
+          isCreatingChunk.current = true;
 
-      // Clear any existing timeout
-      if (chunkTimeoutRef.current) {
-        clearTimeout(chunkTimeoutRef.current);
-      }
+          try {
+            const newChunk = {
+              id: Date.now(),
+              text: finalTranscriptPart.trim(),
+              timestamp: new Date().toISOString()
+            };
 
-      // Set timeout to store chunk after 5 seconds of no new speech
-      if (fullFinalTranscript && lectureId && !isCreatingChunk.current) {
-        chunkTimeoutRef.current = setTimeout(async () => {
-          const currentTranscript = transcriptRef.current.trim();
+            const transcriptionData = {
+              rawText: transcriptRef.current,
+              lastUpdated: new Date().toISOString(),
+              newChunk: newChunk
+            };
 
-          // Only store if there's new content since last storage and we're not already creating a chunk
-          if (currentTranscript && currentTranscript !== lastStoredTranscriptRef.current && !isCreatingChunk.current) {
-            isCreatingChunk.current = true; // Prevent multiple simultaneous chunk creations
-
-            try {
-              // Find only the NEW part that wasn't stored before
-              let newContent = '';
-
-              if (lastStoredTranscriptRef.current === '') {
-                // First chunk - store everything
-                newContent = currentTranscript;
-              } else {
-                // Find new content after the last stored content
-                if (currentTranscript.startsWith(lastStoredTranscriptRef.current)) {
-                  newContent = currentTranscript.substring(lastStoredTranscriptRef.current.length).trim();
-                } else {
-                  // If current doesn't start with last stored, store the whole current (safety fallback)
-                  newContent = currentTranscript;
-                }
+            if (isOnline) {
+              try {
+                const transcriptionDoc = doc(db, 'transcriptions', lectureId);
+                await updateDoc(transcriptionDoc, {
+                  rawText: transcriptionData.rawText,
+                  lastUpdated: serverTimestamp(),
+                  chunks: arrayUnion(transcriptionData.newChunk)
+                });
+              } catch (err) {
+                console.error('Error updating transcription online, storing offline:', err);
+                await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
+                updateOfflineQueueCount();
               }
-
-              if (newContent) {
-                // Update the stored transcript reference
-                lastStoredTranscriptRef.current = currentTranscript;
-
-                const newChunk = {
-                  id: Date.now(),
-                  text: newContent,
-                  timestamp: new Date().toISOString()
-                };
-
-                const transcriptionData = {
-                  rawText: currentTranscript,
-                  lastUpdated: new Date().toISOString(),
-                  newChunk: newChunk
-                };
-
-                if (isOnline) {
-                  try {
-                    const transcriptionDoc = doc(db, 'transcriptions', lectureId);
-                    await updateDoc(transcriptionDoc, {
-                      rawText: transcriptionData.rawText,
-                      lastUpdated: serverTimestamp(),
-                      chunks: arrayUnion(transcriptionData.newChunk)
-                    });
-                  } catch (err) {
-                    console.error('Error updating transcription online, storing offline:', err);
-                    await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
-                    updateOfflineQueueCount();
-                  }
-                } else {
-                  await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
-                  updateOfflineQueueCount();
-                }
-              }
-            } finally {
-              isCreatingChunk.current = false; // Reset flag after chunk creation
+            } else {
+              await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
+              updateOfflineQueueCount();
             }
+          } finally {
+            isCreatingChunk.current = false;
           }
-        }, 5000); // Wait 5 seconds after last speech activity
+        }
       }
+
+      // Always update interim display
+      setInterimTranscript(interim);
     };
 
     recognition.onerror = (event) => {
@@ -261,66 +231,9 @@ function SpeechRecognition({ lectureId, userId }) {
     }
   };
 
-  const stopListening = async () => {
+  const stopListening = () => {
     if (recognitionRef.current && isListening) {
       manualStopRef.current = true; // Mark as manual stop
-
-      // Store any remaining transcript as final chunk before stopping
-      const currentTranscript = transcriptRef.current.trim();
-      if (currentTranscript && currentTranscript !== lastStoredTranscriptRef.current && lectureId && !isCreatingChunk.current) {
-        isCreatingChunk.current = true;
-
-        try {
-          let newContent = '';
-
-          if (lastStoredTranscriptRef.current === '') {
-            newContent = currentTranscript;
-          } else {
-            if (currentTranscript.startsWith(lastStoredTranscriptRef.current)) {
-              newContent = currentTranscript.substring(lastStoredTranscriptRef.current.length).trim();
-            } else {
-              newContent = currentTranscript;
-            }
-          }
-
-          if (newContent) {
-            lastStoredTranscriptRef.current = currentTranscript;
-
-            const newChunk = {
-              id: Date.now(),
-              text: newContent,
-              timestamp: new Date().toISOString()
-            };
-
-            const transcriptionData = {
-              rawText: currentTranscript,
-              lastUpdated: new Date().toISOString(),
-              newChunk: newChunk
-            };
-
-            if (isOnline) {
-              try {
-                const transcriptionDoc = doc(db, 'transcriptions', lectureId);
-                await updateDoc(transcriptionDoc, {
-                  rawText: transcriptionData.rawText,
-                  lastUpdated: serverTimestamp(),
-                  chunks: arrayUnion(transcriptionData.newChunk)
-                });
-              } catch (err) {
-                console.error('Error updating transcription online, storing offline:', err);
-                await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
-                updateOfflineQueueCount();
-              }
-            } else {
-              await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
-              updateOfflineQueueCount();
-            }
-          }
-        } finally {
-          isCreatingChunk.current = false;
-        }
-      }
-
       // Clear any pending chunk timeout
       if (chunkTimeoutRef.current) {
         clearTimeout(chunkTimeoutRef.current);

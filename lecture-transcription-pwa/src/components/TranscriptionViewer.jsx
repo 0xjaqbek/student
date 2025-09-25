@@ -16,54 +16,58 @@ function TranscriptionViewer({ lectureId, user }) {
       return transcription?.rawText || '';
     }
 
-    // Extract final complete sentences from chunks
-    const processedText = transcription.chunks
-      .filter(chunk => chunk.text && chunk.text.trim().length > 0)
-      .reduce((result, currentChunk) => {
-        const currentText = currentChunk.text.trim();
+    // Find the longest, most complete chunk (usually the last one)
+    const longestChunk = transcription.chunks.reduce((longest, current) => {
+      return (current.text?.length || 0) > (longest.text?.length || 0) ? current : longest;
+    }, { text: '' });
 
-        // Skip if this text is already included in our result
-        if (result.includes(currentText)) {
-          return result;
+    if (!longestChunk.text) {
+      return '';
+    }
+
+    // Extract the final unique sentence by finding where repetition starts
+    const text = longestChunk.text;
+
+    // Split by words and find the longest suffix without internal repetition
+    const words = text.split(/\s+/).filter(w => w.length > 0);
+
+    // Look for the pattern: keep building from the end until we find repetition
+    let bestResult = '';
+
+    for (let startPos = words.length - 1; startPos >= 0; startPos--) {
+      const candidate = words.slice(startPos).join(' ');
+
+      // Check if this candidate has internal repetition
+      const candidateWords = candidate.split(/\s+/);
+      let hasRepetition = false;
+
+      // Look for repeated phrases in the candidate
+      for (let i = 0; i < candidateWords.length - 3; i++) {
+        const phrase = candidateWords.slice(i, i + 4).join(' ');
+        const remaining = candidateWords.slice(i + 4).join(' ');
+        if (remaining.includes(phrase)) {
+          hasRepetition = true;
+          break;
         }
+      }
 
-        // For each new chunk, check if it's an extension of what we already have
-        const words = currentText.split(/\s+/);
-        const resultWords = result.split(/\s+/).filter(word => word.length > 0);
+      if (!hasRepetition && candidate.length > bestResult.length) {
+        bestResult = candidate;
+      }
 
-        // Find if current chunk starts where our result ends
-        let overlapIndex = -1;
-        for (let i = Math.max(0, resultWords.length - words.length); i < resultWords.length; i++) {
-          const remainingResultWords = resultWords.slice(i);
-          const startingChunkWords = words.slice(0, remainingResultWords.length);
+      // If we found a good result, stop searching
+      if (bestResult.length > 20 && !hasRepetition) {
+        break;
+      }
+    }
 
-          if (remainingResultWords.every((word, idx) =>
-            word.toLowerCase() === startingChunkWords[idx]?.toLowerCase()
-          )) {
-            overlapIndex = i;
-            break;
-          }
-        }
+    // If no good result found, extract the final complete sentence
+    if (!bestResult || bestResult.length < 10) {
+      const sentences = text.split(/(?<=[.!?])\s+/);
+      bestResult = sentences[sentences.length - 1] || text.substring(text.length - 200);
+    }
 
-        if (overlapIndex >= 0) {
-          // Found overlap, append only the new part
-          const newWords = words.slice(resultWords.length - overlapIndex);
-          if (newWords.length > 0) {
-            return result + (result.endsWith(' ') ? '' : ' ') + newWords.join(' ');
-          }
-          return result;
-        } else {
-          // No overlap found, append with separator
-          return result + (result.length > 0 ? ' ' : '') + currentText;
-        }
-      }, '');
-
-    // Clean up extra whitespace and format nicely
-    return processedText
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/([.!?])\s*([A-ZĄĆĘŁŃÓŚŹŻ])/g, '$1 $2') // Ensure space after sentence endings
-      .replace(/\s+([.!?])/g, '$1'); // Remove space before punctuation
+    return bestResult.replace(/\s+/g, ' ').trim();
   }, [transcription]);
 
   useEffect(() => {
