@@ -12,7 +12,7 @@ function App() {
   const { user, loading } = useAuth();
   const { isOnline } = useNetworkStatus();
   const [selectedLectureId, setSelectedLectureId] = useState(null);
-  const [activeTab, setActiveTab] = useState('browse'); // 'browse', 'record', 'view'
+  const [currentView, setCurrentView] = useState('menu'); // 'menu', 'add-lecture', 'browse-lectures', 'record', 'view'
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Handle sync status
@@ -51,53 +51,112 @@ function App() {
     return <Auth />;
   }
 
-  return (
-    <div className="app">
-      <header className="app-header">
+  const renderMainMenu = () => (
+    <div className="main-menu">
+      <h2>Co chcesz zrobić?</h2>
+      <div className="menu-buttons">
+        <button
+          className="menu-button add-lecture"
+          onClick={() => setCurrentView('add-lecture')}
+        >
+          <span className="menu-icon">➕</span>
+          <span className="menu-title">Dodaj Wykład</span>
+          <span className="menu-description">Utwórz nowy wykład i rozpocznij transkrypcję</span>
+        </button>
+
+        <button
+          className="menu-button browse-lectures"
+          onClick={() => setCurrentView('browse-lectures')}
+        >
+          <span className="menu-icon">📚</span>
+          <span className="menu-title">Przeglądaj Wykłady</span>
+          <span className="menu-description">Zobacz istniejące wykłady i transkrypcje</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderHeader = () => (
+    <header className="app-header">
+      <div className="header-content">
+        {currentView !== 'menu' && (
+          <button
+            className="back-button"
+            onClick={() => {
+              setCurrentView('menu');
+              setSelectedLectureId(null);
+            }}
+          >
+            ← Powrót do Menu
+          </button>
+        )}
+
         <h1>Aplikacja do Transkrypcji Wykładów</h1>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+
+        <div className="header-right">
           {!isOnline && <span className="offline-indicator">OFFLINE</span>}
           {isSyncing && <span className="sync-indicator">SYNC</span>}
           <Auth />
         </div>
-      </header>
+      </div>
+    </header>
+  );
 
-      <nav className="app-nav">
-        <button
-          onClick={() => setActiveTab('browse')}
-          className={activeTab === 'browse' ? 'active' : ''}
-        >
-          Przeglądaj Wykłady
-        </button>
-        <button
-          onClick={() => setActiveTab('record')}
-          className={activeTab === 'record' ? 'active' : ''}
-          disabled={!selectedLectureId}
-        >
-          Nagraj
-        </button>
-        <button
-          onClick={() => setActiveTab('view')}
-          className={activeTab === 'view' ? 'active' : ''}
-          disabled={!selectedLectureId}
-        >
-          Zobacz Transkrypcję
-        </button>
-      </nav>
+  return (
+    <div className="app">
+      {renderHeader()}
 
       <main className="app-main">
-        {activeTab === 'browse' && (
-          <LectureManager
-            user={user}
-            onSelectLecture={(lectureId) => {
-              setSelectedLectureId(lectureId);
-              setActiveTab('record');
-            }}
-            selectedLectureId={selectedLectureId}
-          />
+        {currentView === 'menu' && renderMainMenu()}
+
+        {currentView === 'add-lecture' && (
+          <div className="add-lecture-section">
+            <h2>Dodaj Nowy Wykład</h2>
+            <LectureManager
+              user={user}
+              onSelectLecture={(lectureId) => {
+                setSelectedLectureId(lectureId);
+                setCurrentView('record');
+              }}
+              selectedLectureId={selectedLectureId}
+              mode="add"
+            />
+          </div>
         )}
 
-        {activeTab === 'record' && selectedLectureId && (
+        {currentView === 'browse-lectures' && (
+          <div className="browse-lectures-section">
+            <h2>Przeglądaj Wykłady</h2>
+            <LectureManager
+              user={user}
+              onSelectLecture={(lectureId) => {
+                setSelectedLectureId(lectureId);
+                setCurrentView('view');
+              }}
+              selectedLectureId={selectedLectureId}
+              mode="browse"
+            />
+
+            {selectedLectureId && (
+              <div className="lecture-actions">
+                <button
+                  className="action-button record"
+                  onClick={() => setCurrentView('record')}
+                >
+                  🎤 Nagraj Transkrypcję
+                </button>
+                <button
+                  className="action-button view"
+                  onClick={() => setCurrentView('view')}
+                >
+                  👁️ Zobacz Transkrypcję
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {currentView === 'record' && selectedLectureId && (
           <div className="record-section">
             <h2>Nagrywanie Wykładu</h2>
             <SpeechRecognition
@@ -107,16 +166,13 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'view' && selectedLectureId && (
-          <TranscriptionViewer
-            lectureId={selectedLectureId}
-            user={user}
-          />
-        )}
-
-        {!selectedLectureId && activeTab !== 'browse' && (
-          <div className="no-lecture-selected">
-            <p>Proszę najpierw wybrać wykład z zakładki Przeglądaj.</p>
+        {currentView === 'view' && selectedLectureId && (
+          <div className="view-section">
+            <h2>Transkrypcja Wykładu</h2>
+            <TranscriptionViewer
+              lectureId={selectedLectureId}
+              user={user}
+            />
           </div>
         )}
       </main>

@@ -3,9 +3,9 @@ import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, d
 import { db } from '../firebase';
 import { isAdmin, checkAdminPermission } from '../utils/admin';
 
-function LectureManager({ user, onSelectLecture, selectedLectureId }) {
+function LectureManager({ user, onSelectLecture, selectedLectureId, mode = 'browse' }) {
   const [lectures, setLectures] = useState([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(mode === 'add');
   const [newLecture, setNewLecture] = useState({ name: '', topic: '' });
   const [loading, setLoading] = useState(false);
 
@@ -86,13 +86,19 @@ function LectureManager({ user, onSelectLecture, selectedLectureId }) {
   return (
     <div className="lecture-manager">
       <div className="lecture-header">
-        <h2>Wykłady</h2>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="create-btn"
-        >
-          {showCreateForm ? 'Anuluj' : 'Utwórz Nowy Wykład'}
-        </button>
+        {mode === 'add' ? (
+          <h3>Utwórz nowy wykład i rozpocznij transkrypcję</h3>
+        ) : (
+          <>
+            <h3>Wybierz wykład</h3>
+            <button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="create-btn"
+            >
+              {showCreateForm ? 'Anuluj' : 'Utwórz Nowy Wykład'}
+            </button>
+          </>
+        )}
       </div>
 
       {showCreateForm && (
