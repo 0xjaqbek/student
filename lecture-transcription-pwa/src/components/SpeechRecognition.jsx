@@ -140,7 +140,8 @@ function SpeechRecognition({ lectureId, userId }) {
           if (recognitionRef.current && !manualStopRef.current && !error) {
             console.log('Seamlessly restarting speech recognition due to API timeout...');
             try {
-              // Don't reset processedResultsLength to maintain continuity
+              // Reset processedResultsLength because restart creates a new session with fresh results
+              processedResultsLength.current = 0;
               recognitionRef.current.start();
             } catch (err) {
               console.error('Auto-restart failed:', err);
