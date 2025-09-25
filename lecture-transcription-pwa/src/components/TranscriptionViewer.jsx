@@ -153,7 +153,24 @@ function TranscriptionViewer({ lectureId, user }) {
         {viewMode === 'raw' ? (
           <div className="raw-transcription">
             <div className="content">
-              {transcription.rawText || 'Brak dostępnej transkrypcji.'}
+              {transcription.chunks && transcription.chunks.length > 0 ? (
+                <div className="chunks-display">
+                  {transcription.chunks.map((chunk, index) => (
+                    <div key={chunk.id || index} className="chunk">
+                      <span className="chunk-text">{chunk.text}</span>
+                      <span className="chunk-time">
+                        {new Date(chunk.timestamp).toLocaleTimeString('pl-PL')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : transcription.rawText ? (
+                <div className="raw-text">
+                  {transcription.rawText.replace(/\s+/g, ' ').trim()}
+                </div>
+              ) : (
+                'Brak dostępnej transkrypcji.'
+              )}
             </div>
             <div className="meta">
               Ostatnio zaktualizowano: {transcription.lastUpdated?.toDate?.()?.toLocaleString?.('pl-PL') || 'Nieznane'}

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import syncService from '../services/syncService';
@@ -54,14 +54,17 @@ function SpeechRecognition({ lectureId, userId }) {
 
         // Update transcription (online or offline)
         if (lectureId) {
+          // Only create a new chunk for the new final transcript, not the entire text
+          const newChunk = {
+            id: Date.now(),
+            text: finalTranscript.trim(),
+            timestamp: new Date().toISOString()
+          };
+
           const transcriptionData = {
             rawText: newTranscript,
             lastUpdated: new Date().toISOString(),
-            chunks: [...(transcriptRef.current.match(/.{1,100}(\s|$)/g) || [])].map((chunk, index) => ({
-              id: index,
-              text: chunk.trim(),
-              timestamp: new Date().toISOString()
-            }))
+            newChunk: newChunk // Send only the new chunk instead of regenerating all chunks
           };
 
           if (isOnline) {
@@ -69,8 +72,9 @@ function SpeechRecognition({ lectureId, userId }) {
             try {
               const transcriptionDoc = doc(db, 'transcriptions', lectureId);
               await updateDoc(transcriptionDoc, {
-                ...transcriptionData,
-                lastUpdated: serverTimestamp()
+                rawText: transcriptionData.rawText,
+                lastUpdated: serverTimestamp(),
+                chunks: arrayUnion(transcriptionData.newChunk) // Add only the new chunk
               });
             } catch (err) {
               console.error('Error updating transcription online, storing offline:', err);
