@@ -19,6 +19,7 @@ function SpeechRecognition({ lectureId, userId }) {
   const sessionStartTime = useRef(null);
   const lastChunkTextRef = useRef('');
   const chunkTimeoutRef = useRef(null);
+  const lastProcessedLengthRef = useRef(0);
   const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
@@ -71,15 +72,15 @@ function SpeechRecognition({ lectureId, userId }) {
         // Set new timeout to create chunk
         chunkTimeoutRef.current = setTimeout(async () => {
           const currentText = transcriptRef.current.trim();
-          const lastText = lastChunkTextRef.current.trim();
+          const currentLength = currentText.length;
 
-          // Only create chunk if we have genuinely new content
-          if (currentText && currentText !== lastText && currentText.length > lastText.length) {
-            // Extract only the new part
-            const newContent = currentText.substring(lastText.length).trim();
+          // Only create chunk if we have genuinely new content beyond what we've processed
+          if (currentLength > lastProcessedLengthRef.current) {
+            // Extract only the truly new part
+            const newContent = currentText.substring(lastProcessedLengthRef.current).trim();
 
             if (newContent && lectureId) {
-              lastChunkTextRef.current = currentText;
+              lastProcessedLengthRef.current = currentLength;
 
               const newChunk = {
                 id: Date.now(),
@@ -223,6 +224,7 @@ function SpeechRecognition({ lectureId, userId }) {
         setInterimTranscript('');
         manualStopRef.current = false; // Reset manual stop flag
         lastChunkTextRef.current = ''; // Reset last chunk tracking
+        lastProcessedLengthRef.current = 0; // Reset processed length
         if (chunkTimeoutRef.current) {
           clearTimeout(chunkTimeoutRef.current);
           chunkTimeoutRef.current = null;
