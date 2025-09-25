@@ -1,3 +1,19 @@
+/* Global Reset and Box Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  width: 100vw;
+}
+
 /* App Layout - Dark Theme */
 .app {
   min-height: 100vh;
@@ -5,6 +21,9 @@
   flex-direction: column;
   background: #1a1a1a;
   color: #ffffff;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   /* Disable pull-to-refresh */
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
@@ -12,17 +31,33 @@
 
 .app-header {
   background: #2d2d2d;
-  padding: 1rem 2rem;
+  padding: 1rem;
   border-bottom: 1px solid #404040;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .app-header {
+    padding: 1rem 2rem;
+  }
 }
 
 .app-header h1 {
   margin: 0;
   color: #ffffff;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .app-header h1 {
+    font-size: 1.5rem;
+  }
 }
 
 .app-nav {
@@ -60,11 +95,20 @@
 
 .app-main {
   flex: 1;
-  padding: 2rem;
+  padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  max-width: 100vw;
   background: #1a1a1a;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    padding: 2rem;
+    max-width: 1200px;
+  }
 }
 
 /* Authentication */
@@ -171,12 +215,21 @@
 
 .form-group input {
   width: 100%;
-  padding: 0.5rem;
+  max-width: 100%;
+  padding: 0.75rem;
   border: 1px solid #404040;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 16px; /* Prevents zoom on iOS */
   background: #3d3d3d;
   color: #ffffff;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .form-group input {
+    padding: 0.6rem;
+    font-size: 16px; /* Must stay 16px to prevent zoom */
+  }
 }
 
 .form-group input::placeholder {
@@ -283,6 +336,16 @@
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .controls {
+    gap: 0.5rem;
+    flex-direction: column;
+    align-items: center;
+  }
 }
 
 .controls button {
@@ -292,6 +355,16 @@
   cursor: pointer;
   font-size: 16px;
   transition: all 0.2s;
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+@media (max-width: 480px) {
+  .controls button {
+    width: 100%;
+    max-width: 280px;
+    padding: 1rem 1.5rem;
+  }
 }
 
 .start-btn {
@@ -346,10 +419,19 @@
   background: #2d2d2d;
   border: 1px solid #404040;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   min-height: 300px;
   margin-bottom: 1rem;
   color: #ffffff;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 768px) {
+  .transcript-container {
+    padding: 1.5rem;
+  }
 }
 
 .transcript {
@@ -613,21 +695,6 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .app-header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-
-  .app-nav {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .app-main {
-    padding: 1rem;
-  }
-
   .lecture-header {
     flex-direction: column;
     gap: 1rem;
@@ -642,14 +709,49 @@
 
   .view-controls {
     justify-content: center;
+    flex-wrap: wrap;
   }
 
   .action-buttons {
     justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-menu {
+    min-height: 50vh;
+    padding: 1rem;
   }
 
-  .controls {
+  .main-menu h2 {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .lecture-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .add-lecture-section,
+  .browse-lectures-section,
+  .record-section,
+  .view-section {
+    padding: 1rem;
+  }
+
+  .transcription-content {
+    padding: 1rem;
+  }
+
+  .listening-indicator {
     flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .session-info {
+    font-size: 14px;
   }
 }
 
@@ -659,18 +761,10 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Prevent touch move on document to disable pull-to-refresh */
-body {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
 #root {
-  height: 100vh;
-  overflow-y: auto;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Offline indicators */
@@ -756,10 +850,17 @@ body {
 
 .menu-buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
   width: 100%;
   max-width: 800px;
+}
+
+@media (max-width: 480px) {
+  .menu-buttons {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 .menu-button {
@@ -810,6 +911,8 @@ body {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .back-button {
@@ -821,6 +924,15 @@ body {
   cursor: pointer;
   font-size: 14px;
   transition: background 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .back-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 12px;
+  }
 }
 
 .back-button:hover {
