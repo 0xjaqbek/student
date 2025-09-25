@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#007bff" stroke="#0056b3" stroke-width="8"/>
+
+  <!-- Microphone body -->
+  <rect x="220" y="120" width="72" height="140" rx="36" ry="36" fill="#ffffff" stroke="#e9ecef" stroke-width="4"/>
+
+  <!-- Microphone stand -->
+  <rect x="250" y="260" width="12" height="80" fill="#ffffff"/>
+  <rect x="220" y="336" width="72" height="12" fill="#ffffff"/>
+
+  <!-- Sound waves -->
+  <path d="M 310 140 Q 380 200 310 260" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.8"/>
+  <path d="M 325 120 Q 420 200 325 280" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.6"/>
+  <path d="M 340 100 Q 460 200 340 300" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.4"/>
+
+  <!-- Smaller sound waves on other side -->
+  <path d="M 202 140 Q 132 200 202 260" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.6"/>
+  <path d="M 187 120 Q 92 200 187 280" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.4"/>
+
+  <!-- Text bubble for transcription -->
+  <ellipse cx="380" cy="350" rx="80" ry="45" fill="#ffffff" stroke="#007bff" stroke-width="4"/>
+  <text x="380" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#007bff">ABC</text>
+
+  <!-- Polish accent - small PL flag colors -->
+  <rect x="180" y="380" width="20" height="12" fill="#ffffff"/>
+  <rect x="180" y="392" width="20" height="12" fill="#dc143c"/>
+  <text x="210" y="395" font-family="Arial, sans-serif" font-size="16" fill="#ffffff">PL</text>
+</svg>
