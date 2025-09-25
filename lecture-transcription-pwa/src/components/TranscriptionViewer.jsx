@@ -155,7 +155,14 @@ function TranscriptionViewer({ lectureId, user }) {
             <div className="content">
               {transcription.chunks && transcription.chunks.length > 0 ? (
                 <div className="chunks-display">
-                  {transcription.chunks.map((chunk, index) => (
+                  {transcription.chunks
+                    .filter((chunk, index, array) => {
+                      // Remove duplicate chunks and empty chunks
+                      if (!chunk.text || chunk.text.trim() === '') return false;
+                      // Keep only chunks that aren't duplicates of previous ones
+                      return index === 0 || chunk.text !== array[index - 1]?.text;
+                    })
+                    .map((chunk, index) => (
                     <div key={chunk.id || index} className="chunk">
                       <span className="chunk-text">{chunk.text}</span>
                       <span className="chunk-time">

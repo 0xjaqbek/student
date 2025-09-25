@@ -39,58 +39,53 @@ function SpeechRecognition({ lectureId, userId }) {
     };
 
     recognition.onresult = async (event) => {
-      let finalTranscript = '';
       let interim = '';
 
+      // Only process new results (from event.resultIndex onward)
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
+          // Only store final results as chunks
+          if (transcript.trim()) {
+            const newTranscript = transcriptRef.current + transcript + ' ';
+            transcriptRef.current = newTranscript;
+            setTranscript(newTranscript);
+
+            // Store this final result as a chunk
+            if (lectureId) {
+              const newChunk = {
+                id: Date.now(),
+                text: transcript.trim(),
+                timestamp: new Date().toISOString()
+              };
+
+              const transcriptionData = {
+                rawText: newTranscript,
+                lastUpdated: new Date().toISOString(),
+                newChunk: newChunk
+              };
+
+              if (isOnline) {
+                try {
+                  const transcriptionDoc = doc(db, 'transcriptions', lectureId);
+                  await updateDoc(transcriptionDoc, {
+                    rawText: transcriptionData.rawText,
+                    lastUpdated: serverTimestamp(),
+                    chunks: arrayUnion(transcriptionData.newChunk)
+                  });
+                } catch (err) {
+                  console.error('Error updating transcription online, storing offline:', err);
+                  await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
+                  updateOfflineQueueCount();
+                }
+              } else {
+                await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
+                updateOfflineQueueCount();
+              }
+            }
+          }
         } else {
           interim += transcript;
-        }
-      }
-
-      if (finalTranscript) {
-        const newTranscript = transcriptRef.current + finalTranscript;
-        transcriptRef.current = newTranscript;
-        setTranscript(newTranscript);
-
-        // Update transcription (online or offline)
-        if (lectureId) {
-          // Only create a new chunk for the new final transcript, not the entire text
-          const newChunk = {
-            id: Date.now(),
-            text: finalTranscript.trim(),
-            timestamp: new Date().toISOString()
-          };
-
-          const transcriptionData = {
-            rawText: newTranscript,
-            lastUpdated: new Date().toISOString(),
-            newChunk: newChunk // Send only the new chunk instead of regenerating all chunks
-          };
-
-          if (isOnline) {
-            // Try to update Firebase directly
-            try {
-              const transcriptionDoc = doc(db, 'transcriptions', lectureId);
-              await updateDoc(transcriptionDoc, {
-                rawText: transcriptionData.rawText,
-                lastUpdated: serverTimestamp(),
-                chunks: arrayUnion(transcriptionData.newChunk) // Add only the new chunk
-              });
-            } catch (err) {
-              console.error('Error updating transcription online, storing offline:', err);
-              // Store offline if online update fails
-              await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
-              updateOfflineQueueCount();
-            }
-          } else {
-            // Store offline when offline
-            await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
-            updateOfflineQueueCount();
-          }
         }
       }
 
