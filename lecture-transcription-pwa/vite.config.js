@@ -35,5 +35,5 @@ export default defineConfig({
       }
     })
   ],
-  base: '/lecture-transcription-pwa/'
+  base: '/student/'
 })
