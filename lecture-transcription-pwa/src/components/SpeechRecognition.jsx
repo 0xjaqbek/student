@@ -121,13 +121,35 @@ function SpeechRecognition({ lectureId, userId }) {
     };
 
     recognition.onerror = (event) => {
-      setError(`Błąd rozpoznawania mowy: ${event.error}`);
-      setIsListening(false);
+      console.error('Speech recognition error:', event.error);
+      // Only set error and stop for serious errors, not network issues
+      if (event.error === 'network' || event.error === 'audio-capture' || event.error === 'not-allowed') {
+        setError(`Błąd rozpoznawania mowy: ${event.error}`);
+        setIsListening(false);
+      }
+      // For other errors like 'no-speech', let the onend handler restart
     };
 
     recognition.onend = () => {
-      setIsListening(false);
-      // No automatic restart - only stop when user manually stops or on error
+      // Only show as stopped if user manually stopped or there's an error
+      if (manualStopRef.current || error) {
+        setIsListening(false);
+      } else {
+        // API stopped due to timeout - restart seamlessly to continue listening
+        setTimeout(() => {
+          if (recognitionRef.current && !manualStopRef.current && !error) {
+            console.log('Seamlessly restarting speech recognition due to API timeout...');
+            try {
+              // Don't reset processedResultsLength to maintain continuity
+              recognitionRef.current.start();
+            } catch (err) {
+              console.error('Auto-restart failed:', err);
+              setError('Transkrypcja została przerwana. Naciśnij "Rozpocznij Nagrywanie" aby kontynuować.');
+              setIsListening(false);
+            }
+          }
+        }, 100); // Very short delay to restart quickly
+      }
     };
 
     return () => {
@@ -208,6 +230,7 @@ function SpeechRecognition({ lectureId, userId }) {
         transcriptRef.current = '';
         setTranscript('');
         setInterimTranscript('');
+        setError(''); // Clear any previous errors
         manualStopRef.current = false; // Reset manual stop flag
         lastStoredTranscriptRef.current = ''; // Reset stored transcript tracking
         isCreatingChunk.current = false; // Reset chunk creation flag
