@@ -11,8 +11,12 @@ function SpeechRecognition({ lectureId, userId }) {
   const [interimTranscript, setInterimTranscript] = useState('');
   const [error, setError] = useState('');
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
+  const [sessionDuration, setSessionDuration] = useState(0);
+  const [restartCount, setRestartCount] = useState(0);
   const recognitionRef = useRef(null);
   const transcriptRef = useRef('');
+  const manualStopRef = useRef(false);
+  const sessionStartTime = useRef(null);
   const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
@@ -100,6 +104,24 @@ function SpeechRecognition({ lectureId, userId }) {
 
     recognition.onend = () => {
       setIsListening(false);
+
+      // Auto-restart if user hasn't manually stopped and no errors
+      if (!manualStopRef.current && !error) {
+        setTimeout(() => {
+          if (recognitionRef.current && !manualStopRef.current) {
+            console.log('Auto-restarting speech recognition...');
+            try {
+              setRestartCount(prev => prev + 1);
+              setIsListening(true);
+              recognitionRef.current.start();
+            } catch (err) {
+              console.error('Auto-restart failed:', err);
+              setError('Transkrypcja została przerwana. Naciśnij "Rozpocznij Nagrywanie" aby kontynuować.');
+              setIsListening(false);
+            }
+          }
+        }, 1000); // Wait 1 second before restarting
+      }
     };
 
     return () => {
@@ -116,6 +138,17 @@ function SpeechRecognition({ lectureId, userId }) {
       updateOfflineQueueCount();
     }
   }, [isOnline]);
+
+  // Session timer
+  useEffect(() => {
+    let interval;
+    if (isListening && sessionStartTime.current) {
+      interval = setInterval(() => {
+        setSessionDuration(Math.floor((Date.now() - sessionStartTime.current) / 1000));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isListening]);
 
   // Update offline queue count
   const updateOfflineQueueCount = async () => {
@@ -169,6 +202,10 @@ function SpeechRecognition({ lectureId, userId }) {
         transcriptRef.current = '';
         setTranscript('');
         setInterimTranscript('');
+        manualStopRef.current = false; // Reset manual stop flag
+        sessionStartTime.current = Date.now(); // Start session timer
+        setSessionDuration(0);
+        setRestartCount(0);
         recognitionRef.current.start();
       } catch (err) {
         setError('Błąd podczas uruchamiania transkrypcji: ' + err.message);
@@ -178,6 +215,7 @@ function SpeechRecognition({ lectureId, userId }) {
 
   const stopListening = () => {
     if (recognitionRef.current && isListening) {
+      manualStopRef.current = true; // Mark as manual stop
       recognitionRef.current.stop();
     }
   };
@@ -254,6 +292,10 @@ function SpeechRecognition({ lectureId, userId }) {
       {isListening && (
         <div className="listening-indicator">
           🎤 Nasłuchiwanie...
+          <span className="session-info">
+            ⏱️ {Math.floor(sessionDuration / 60)}:{(sessionDuration % 60).toString().padStart(2, '0')}
+            {restartCount > 0 && <span className="restart-info">🔄 {restartCount}</span>}
+          </span>
           {!isOnline && <span className="offline-indicator">OFFLINE</span>}
         </div>
       )}
