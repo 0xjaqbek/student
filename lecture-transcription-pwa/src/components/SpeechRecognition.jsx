@@ -19,7 +19,7 @@ function SpeechRecognition({ lectureId, userId }) {
   const sessionStartTime = useRef(null);
   const lastChunkTextRef = useRef('');
   const chunkTimeoutRef = useRef(null);
-  const lastProcessedLengthRef = useRef(0);
+  const processedWordsCountRef = useRef(0);
   const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
@@ -72,44 +72,51 @@ function SpeechRecognition({ lectureId, userId }) {
         // Set new timeout to create chunk
         chunkTimeoutRef.current = setTimeout(async () => {
           const currentText = transcriptRef.current.trim();
-          const currentLength = currentText.length;
 
-          // Only create chunk if we have genuinely new content beyond what we've processed
-          if (currentLength > lastProcessedLengthRef.current) {
-            // Extract only the truly new part
-            const newContent = currentText.substring(lastProcessedLengthRef.current).trim();
+          if (currentText && lectureId) {
+            // Split current text into words
+            const allWords = currentText.split(/\s+/).filter(word => word.length > 0);
+            const currentWordCount = allWords.length;
 
-            if (newContent && lectureId) {
-              lastProcessedLengthRef.current = currentLength;
+            // Only create chunk if we have new words beyond what we've processed
+            if (currentWordCount > processedWordsCountRef.current) {
+              // Extract only the new words
+              const newWords = allWords.slice(processedWordsCountRef.current);
+              const newContent = newWords.join(' ').trim();
 
-              const newChunk = {
-                id: Date.now(),
-                text: newContent,
-                timestamp: new Date().toISOString()
-              };
+              if (newContent) {
+                // Update the processed words count
+                processedWordsCountRef.current = currentWordCount;
 
-              const transcriptionData = {
-                rawText: currentText,
-                lastUpdated: new Date().toISOString(),
-                newChunk: newChunk
-              };
+                const newChunk = {
+                  id: Date.now(),
+                  text: newContent,
+                  timestamp: new Date().toISOString()
+                };
 
-              if (isOnline) {
-                try {
-                  const transcriptionDoc = doc(db, 'transcriptions', lectureId);
-                  await updateDoc(transcriptionDoc, {
-                    rawText: transcriptionData.rawText,
-                    lastUpdated: serverTimestamp(),
-                    chunks: arrayUnion(transcriptionData.newChunk)
-                  });
-                } catch (err) {
-                  console.error('Error updating transcription online, storing offline:', err);
+                const transcriptionData = {
+                  rawText: currentText,
+                  lastUpdated: new Date().toISOString(),
+                  newChunk: newChunk
+                };
+
+                if (isOnline) {
+                  try {
+                    const transcriptionDoc = doc(db, 'transcriptions', lectureId);
+                    await updateDoc(transcriptionDoc, {
+                      rawText: transcriptionData.rawText,
+                      lastUpdated: serverTimestamp(),
+                      chunks: arrayUnion(transcriptionData.newChunk)
+                    });
+                  } catch (err) {
+                    console.error('Error updating transcription online, storing offline:', err);
+                    await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
+                    updateOfflineQueueCount();
+                  }
+                } else {
                   await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
                   updateOfflineQueueCount();
                 }
-              } else {
-                await syncService.storeOfflineTranscription(lectureId, transcriptionData, userId);
-                updateOfflineQueueCount();
               }
             }
           }
@@ -224,7 +231,7 @@ function SpeechRecognition({ lectureId, userId }) {
         setInterimTranscript('');
         manualStopRef.current = false; // Reset manual stop flag
         lastChunkTextRef.current = ''; // Reset last chunk tracking
-        lastProcessedLengthRef.current = 0; // Reset processed length
+        processedWordsCountRef.current = 0; // Reset processed words count
         if (chunkTimeoutRef.current) {
           clearTimeout(chunkTimeoutRef.current);
           chunkTimeoutRef.current = null;
