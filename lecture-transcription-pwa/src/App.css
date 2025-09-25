@@ -721,7 +721,7 @@ body {
 @media (max-width: 480px) {
   .main-menu {
     min-height: 50vh;
-    padding: 1rem;
+    padding: 1rem 1rem 3rem 1rem; /* Extra bottom padding on mobile */
   }
 
   .main-menu h2 {
@@ -737,7 +737,7 @@ body {
   .browse-lectures-section,
   .record-section,
   .view-section {
-    padding: 1rem;
+    padding: 1rem 1rem 2rem 1rem; /* Extra bottom padding on mobile */
   }
 
   .transcription-content {
@@ -838,7 +838,7 @@ html, body {
   align-items: center;
   justify-content: center;
   min-height: 60vh;
-  padding: 2rem;
+  padding: 2rem 2rem 4rem 2rem; /* Added extra bottom padding */
 }
 
 .main-menu h2 {
@@ -993,7 +993,7 @@ html, body {
 .browse-lectures-section,
 .record-section,
 .view-section {
-  padding: 2rem;
+  padding: 2rem 2rem 3rem 2rem; /* Extra bottom padding for all sections */
 }
 
 .add-lecture-section h2,
