@@ -11,6 +11,9 @@ Progressive Web App do transkrypcji wykładów w czasie rzeczywistym i współpr
 - 🚀 **Progressive Web App** - Działa offline i może być zainstalowana
 - 📱 **Responsywny design** - Działa na komputerze i urządzeniach mobilnych
 - 📤 **Opcje eksportu** - Pobieranie transkrypcji jako pliki TXT
+- 👑 **Panel administratora** - Specjalne uprawnienia dla administratora (jaqbek.eth@gmail.com)
+- 📶 **Obsługa offline** - Działa bez internetu, synchronizuje dane po powrocie połączenia
+- 🚫 **Brak pull-to-refresh** - Zablokowane odświeżanie przez przeciągnięcie w dół
 
 ## Setup Instructions
 
@@ -105,12 +108,25 @@ npm run dev
 
 The app will be available at `http://localhost:5173`
 
-### 6. Build and Deploy
+### 6. GitHub Pages Deployment
 
+#### Option A: Automatic Deployment (Recommended)
+1. Push your code to GitHub
+2. Go to your repository Settings → Pages
+3. Set Source to "GitHub Actions"
+4. The app will automatically deploy when you push to main branch
+5. Your app will be available at: `https://yourusername.github.io/lecture-transcription-pwa/`
+
+#### Option B: Manual Deployment
 ```bash
 npm run build
 npm run deploy
 ```
+
+**Important**: Make sure to:
+- Set the correct repository name in `vite.config.js` base path
+- Enable GitHub Pages in repository settings
+- Use HTTPS for speech recognition to work in production
 
 ## Browser Compatibility
 
