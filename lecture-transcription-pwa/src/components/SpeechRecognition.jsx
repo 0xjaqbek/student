@@ -17,6 +17,8 @@ function SpeechRecognition({ lectureId, userId }) {
   const transcriptRef = useRef('');
   const manualStopRef = useRef(false);
   const sessionStartTime = useRef(null);
+  const lastChunkTextRef = useRef('');
+  const chunkTimeoutRef = useRef(null);
   const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
@@ -40,27 +42,53 @@ function SpeechRecognition({ lectureId, userId }) {
 
     recognition.onresult = async (event) => {
       let interim = '';
+      let finalTranscript = '';
 
-      // Only process new results (from event.resultIndex onward)
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // Process all results to get current state
+      for (let i = 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          // Only store final results as chunks
-          if (transcript.trim()) {
-            const newTranscript = transcriptRef.current + transcript + ' ';
-            transcriptRef.current = newTranscript;
-            setTranscript(newTranscript);
+          finalTranscript += transcript + ' ';
+        } else {
+          interim += transcript;
+        }
+      }
 
-            // Store this final result as a chunk
-            if (lectureId) {
+      // Update display immediately
+      if (finalTranscript) {
+        transcriptRef.current = finalTranscript;
+        setTranscript(finalTranscript);
+      }
+      setInterimTranscript(interim);
+
+      // Debounced chunk creation - only create chunk after 2 seconds of no new results
+      if (finalTranscript && finalTranscript !== lastChunkTextRef.current) {
+        // Clear previous timeout
+        if (chunkTimeoutRef.current) {
+          clearTimeout(chunkTimeoutRef.current);
+        }
+
+        // Set new timeout to create chunk
+        chunkTimeoutRef.current = setTimeout(async () => {
+          const currentText = transcriptRef.current.trim();
+          const lastText = lastChunkTextRef.current.trim();
+
+          // Only create chunk if we have genuinely new content
+          if (currentText && currentText !== lastText && currentText.length > lastText.length) {
+            // Extract only the new part
+            const newContent = currentText.substring(lastText.length).trim();
+
+            if (newContent && lectureId) {
+              lastChunkTextRef.current = currentText;
+
               const newChunk = {
                 id: Date.now(),
-                text: transcript.trim(),
+                text: newContent,
                 timestamp: new Date().toISOString()
               };
 
               const transcriptionData = {
-                rawText: newTranscript,
+                rawText: currentText,
                 lastUpdated: new Date().toISOString(),
                 newChunk: newChunk
               };
@@ -84,12 +112,8 @@ function SpeechRecognition({ lectureId, userId }) {
               }
             }
           }
-        } else {
-          interim += transcript;
-        }
+        }, 2000); // Wait 2 seconds before creating chunk
       }
-
-      setInterimTranscript(interim);
     };
 
     recognition.onerror = (event) => {
@@ -198,6 +222,11 @@ function SpeechRecognition({ lectureId, userId }) {
         setTranscript('');
         setInterimTranscript('');
         manualStopRef.current = false; // Reset manual stop flag
+        lastChunkTextRef.current = ''; // Reset last chunk tracking
+        if (chunkTimeoutRef.current) {
+          clearTimeout(chunkTimeoutRef.current);
+          chunkTimeoutRef.current = null;
+        }
         sessionStartTime.current = Date.now(); // Start session timer
         setSessionDuration(0);
         setRestartCount(0);
@@ -211,6 +240,11 @@ function SpeechRecognition({ lectureId, userId }) {
   const stopListening = () => {
     if (recognitionRef.current && isListening) {
       manualStopRef.current = true; // Mark as manual stop
+      // Clear any pending chunk timeout
+      if (chunkTimeoutRef.current) {
+        clearTimeout(chunkTimeoutRef.current);
+        chunkTimeoutRef.current = null;
+      }
       recognitionRef.current.stop();
     }
   };
