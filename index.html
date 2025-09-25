@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Disable pull-to-refresh -->
+    <meta name="overscroll-behavior" content="none" />
+    <title>Aplikacja do Transkrypcji Wykładów</title>
+    <style>
+      /* Prevent pull-to-refresh globally */
+      html, body {
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      #root {
+        height: 100vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    </style>
+    <script type="module" crossorigin src="/lecture-transcription-pwa/assets/index-yen5VOpk.js"></script>
+    <link rel="stylesheet" crossorigin href="/lecture-transcription-pwa/assets/index-s3-QJHUS.css">
+  <link rel="manifest" href="/lecture-transcription-pwa/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/lecture-transcription-pwa/registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

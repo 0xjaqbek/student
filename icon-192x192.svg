@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- Background circle -->
+  <circle cx="96" cy="96" r="90" fill="#007bff" stroke="#0056b3" stroke-width="4"/>
+
+  <!-- Microphone body -->
+  <rect x="80" y="40" width="32" height="60" rx="16" ry="16" fill="#ffffff" stroke="#e9ecef" stroke-width="2"/>
+
+  <!-- Microphone stand -->
+  <rect x="94" y="100" width="4" height="30" fill="#ffffff"/>
+  <rect x="84" y="128" width="24" height="4" fill="#ffffff"/>
+
+  <!-- Sound waves -->
+  <path d="M 110 50 Q 130 70 110 90" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.8"/>
+  <path d="M 115 45 Q 140 70 115 95" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.6"/>
+  <path d="M 120 40 Q 150 70 120 100" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.4"/>
+
+  <!-- Text bubble for transcription -->
+  <ellipse cx="140" cy="130" rx="35" ry="20" fill="#ffffff" stroke="#007bff" stroke-width="2"/>
+  <text x="140" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#007bff">ABC</text>
+</svg>

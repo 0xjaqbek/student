@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/lecture-transcription-pwa/sw.js', { scope: '/lecture-transcription-pwa/' })})}
