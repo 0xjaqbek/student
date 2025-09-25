@@ -12,7 +12,6 @@ function SpeechRecognition({ lectureId, userId }) {
   const [error, setError] = useState('');
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [sessionDuration, setSessionDuration] = useState(0);
-  const [restartCount, setRestartCount] = useState(0);
   const recognitionRef = useRef(null);
   const transcriptRef = useRef('');
   const manualStopRef = useRef(false);
@@ -36,6 +35,7 @@ function SpeechRecognition({ lectureId, userId }) {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'pl-PL'; // Polish language
+    recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -127,25 +127,7 @@ function SpeechRecognition({ lectureId, userId }) {
 
     recognition.onend = () => {
       setIsListening(false);
-
-      // Auto-restart if user hasn't manually stopped and no errors
-      if (!manualStopRef.current && !error) {
-        setTimeout(() => {
-          if (recognitionRef.current && !manualStopRef.current) {
-            console.log('Auto-restarting speech recognition...');
-            try {
-              processedResultsLength.current = 0; // Reset for new session
-              setRestartCount(prev => prev + 1);
-              setIsListening(true);
-              recognitionRef.current.start();
-            } catch (err) {
-              console.error('Auto-restart failed:', err);
-              setError('Transkrypcja została przerwana. Naciśnij "Rozpocznij Nagrywanie" aby kontynuować.');
-              setIsListening(false);
-            }
-          }
-        }, 1000); // Wait 1 second before restarting
-      }
+      // No automatic restart - only stop when user manually stops or on error
     };
 
     return () => {
@@ -236,7 +218,6 @@ function SpeechRecognition({ lectureId, userId }) {
         }
         sessionStartTime.current = Date.now(); // Start session timer
         setSessionDuration(0);
-        setRestartCount(0);
         recognitionRef.current.start();
       } catch (err) {
         setError('Błąd podczas uruchamiania transkrypcji: ' + err.message);
@@ -330,7 +311,6 @@ function SpeechRecognition({ lectureId, userId }) {
           🎤 Nasłuchiwanie...
           <span className="session-info">
             ⏱️ {Math.floor(sessionDuration / 60)}:{(sessionDuration % 60).toString().padStart(2, '0')}
-            {restartCount > 0 && <span className="restart-info">🔄 {restartCount}</span>}
           </span>
           {!isOnline && <span className="offline-indicator">OFFLINE</span>}
         </div>
