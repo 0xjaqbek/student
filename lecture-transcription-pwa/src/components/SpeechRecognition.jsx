@@ -19,7 +19,6 @@ function SpeechRecognition({ lectureId, userId }) {
   const sessionStartTime = useRef(null);
   const lastChunkTextRef = useRef('');
   const chunkTimeoutRef = useRef(null);
-  const processedWordsCountRef = useRef(0);
   const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
@@ -74,19 +73,28 @@ function SpeechRecognition({ lectureId, userId }) {
           const currentText = transcriptRef.current.trim();
 
           if (currentText && lectureId) {
-            // Split current text into words
-            const allWords = currentText.split(/\s+/).filter(word => word.length > 0);
-            const currentWordCount = allWords.length;
+            // Get current words
+            const currentWords = currentText.split(/\s+/).filter(word => word.length > 0);
 
-            // Only create chunk if we have new words beyond what we've processed
-            if (currentWordCount > processedWordsCountRef.current) {
-              // Extract only the new words
-              const newWords = allWords.slice(processedWordsCountRef.current);
+            // Get all previously stored text from lastChunkTextRef
+            const previousText = lastChunkTextRef.current.trim();
+            const previousWords = previousText ? previousText.split(/\s+/).filter(word => word.length > 0) : [];
+
+            // Find only the words that are truly new (not in previous text)
+            const newWords = [];
+            let startIndex = previousWords.length;
+
+            // Extract only words that come after all previously stored words
+            if (currentWords.length > previousWords.length) {
+              newWords.push(...currentWords.slice(startIndex));
+            }
+
+            if (newWords.length > 0) {
               const newContent = newWords.join(' ').trim();
 
               if (newContent) {
-                // Update the processed words count
-                processedWordsCountRef.current = currentWordCount;
+                // Update the stored text to include new content
+                lastChunkTextRef.current = currentText;
 
                 const newChunk = {
                   id: Date.now(),
@@ -231,7 +239,6 @@ function SpeechRecognition({ lectureId, userId }) {
         setInterimTranscript('');
         manualStopRef.current = false; // Reset manual stop flag
         lastChunkTextRef.current = ''; // Reset last chunk tracking
-        processedWordsCountRef.current = 0; // Reset processed words count
         if (chunkTimeoutRef.current) {
           clearTimeout(chunkTimeoutRef.current);
           chunkTimeoutRef.current = null;
