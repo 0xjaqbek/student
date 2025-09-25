@@ -358,8 +358,11 @@
   text-align: left;
 }
 
-.interim {
-  color: #6c757d;
+.transcript .interim {
+  color: #007bff;
+  background-color: rgba(0, 123, 255, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
   font-style: italic;
 }
 
