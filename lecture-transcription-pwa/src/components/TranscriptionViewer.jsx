@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { isAdmin, checkAdminPermission } from '../utils/admin';
@@ -9,6 +9,62 @@ function TranscriptionViewer({ lectureId, user }) {
   const [correctedText, setCorrectedText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Process chunks to create clean, deduplicated transcription
+  const processedTranscription = useMemo(() => {
+    if (!transcription?.chunks || transcription.chunks.length === 0) {
+      return transcription?.rawText || '';
+    }
+
+    // Extract final complete sentences from chunks
+    const processedText = transcription.chunks
+      .filter(chunk => chunk.text && chunk.text.trim().length > 0)
+      .reduce((result, currentChunk) => {
+        const currentText = currentChunk.text.trim();
+
+        // Skip if this text is already included in our result
+        if (result.includes(currentText)) {
+          return result;
+        }
+
+        // For each new chunk, check if it's an extension of what we already have
+        const words = currentText.split(/\s+/);
+        const resultWords = result.split(/\s+/).filter(word => word.length > 0);
+
+        // Find if current chunk starts where our result ends
+        let overlapIndex = -1;
+        for (let i = Math.max(0, resultWords.length - words.length); i < resultWords.length; i++) {
+          const remainingResultWords = resultWords.slice(i);
+          const startingChunkWords = words.slice(0, remainingResultWords.length);
+
+          if (remainingResultWords.every((word, idx) =>
+            word.toLowerCase() === startingChunkWords[idx]?.toLowerCase()
+          )) {
+            overlapIndex = i;
+            break;
+          }
+        }
+
+        if (overlapIndex >= 0) {
+          // Found overlap, append only the new part
+          const newWords = words.slice(resultWords.length - overlapIndex);
+          if (newWords.length > 0) {
+            return result + (result.endsWith(' ') ? '' : ' ') + newWords.join(' ');
+          }
+          return result;
+        } else {
+          // No overlap found, append with separator
+          return result + (result.length > 0 ? ' ' : '') + currentText;
+        }
+      }, '');
+
+    // Clean up extra whitespace and format nicely
+    return processedText
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/([.!?])\s*([A-ZĄĆĘŁŃÓŚŹŻ])/g, '$1 $2') // Ensure space after sentence endings
+      .replace(/\s+([.!?])/g, '$1'); // Remove space before punctuation
+  }, [transcription]);
 
   useEffect(() => {
     if (!lectureId) return;
@@ -44,7 +100,7 @@ function TranscriptionViewer({ lectureId, user }) {
   const exportAsText = () => {
     const textToExport = viewMode === 'raw'
       ? transcription?.rawText || ''
-      : transcription?.correctedText || '';
+      : transcription?.correctedText || processedTranscription || '';
 
     const blob = new Blob([textToExport], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -202,14 +258,18 @@ function TranscriptionViewer({ lectureId, user }) {
             ) : (
               <div className="view-mode">
                 <div className="content">
-                  {transcription.correctedText || 'Brak poprawionych notatek. Kliknij "Edytuj Notatki" aby je dodać.'}
+                  {transcription.correctedText || (processedTranscription || 'Brak dostępnej transkrypcji do przetworzenia.')}
                 </div>
-                {transcription.correctedText && (
+                {transcription.correctedText ? (
                   <div className="meta">
                     Poprawione przez: {transcription.correctedByName || 'Nieznany'} dnia{' '}
                     {transcription.correctedAt?.toDate?.()?.toLocaleString?.('pl-PL') || 'Nieznana data'}
                   </div>
-                )}
+                ) : processedTranscription ? (
+                  <div className="meta">
+                    Automatycznie przetworzono z {transcription.chunks?.length || 0} fragmentów transkrypcji
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
